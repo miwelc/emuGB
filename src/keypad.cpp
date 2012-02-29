@@ -1,3 +1,10 @@
+/*
+	Name: emuGB
+	Copyright: Miguel Cantón Cortés
+	Date: 29/02/12 04:15
+	Description: GameBoy Classic emulator
+*/
+
 #include "keypad.h"
 
 KeyPad::KeyPad() {
