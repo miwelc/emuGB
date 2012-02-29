@@ -1,0 +1,36 @@
+/* THIS FILE WILL BE OVERWRITTEN BY DEV-C++ */
+/* DO NOT EDIT! */
+
+#include <windows.h> // include for version info constants
+
+
+A ICON MOVEABLE PURE LOADONCALL DISCARDABLE "emuGB.ico"
+
+//
+// TO CHANGE VERSION INFORMATION, EDIT PROJECT OPTIONS...
+//
+1 VERSIONINFO
+FILEVERSION 0,1,0,1085
+PRODUCTVERSION 0,1,0,1085
+FILETYPE VFT_APP
+{
+  BLOCK "StringFileInfo"
+	 {
+		 BLOCK "0C0A04E4"
+		 {
+			 VALUE "CompanyName", ""
+			 VALUE "FileVersion", "0.1.0.1085"
+			 VALUE "FileDescription", "Emulador de Game Boy Clásica"
+			 VALUE "InternalName", ""
+			 VALUE "LegalCopyright", "© 2011, Miguel Cantón Cortés"
+			 VALUE "LegalTrademarks", ""
+			 VALUE "OriginalFilename", ""
+			 VALUE "ProductName", "emuGB"
+			 VALUE "ProductVersion", ""
+		 }
+	 }
+  BLOCK "VarFileInfo"
+	 {
+		 VALUE "Translation", 0x0C0A, 1252
+	 }
+}

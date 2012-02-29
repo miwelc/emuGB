@@ -1,0 +1,57 @@
+# Project: emuGB
+# Makefile created by Dev-C++ 5.1.1.0
+
+CPP      = g++.exe
+CC       = gcc.exe
+WINDRES  = windres.exe
+RES      = ./obj/emuGB_private.res
+OBJ      = ./obj/CartSlot.o ./obj/emuGB.o ./obj/GameBoy.o ./obj/gpu.o ./obj/instructionSet.o ./obj/MMU.o ./obj/z80gb.o ./obj/keypad.o ./obj/timer.o $(RES)
+LINKOBJ  = ./obj/CartSlot.o ./obj/emuGB.o ./obj/GameBoy.o ./obj/gpu.o ./obj/instructionSet.o ./obj/MMU.o ./obj/z80gb.o ./obj/keypad.o ./obj/timer.o $(RES)
+LIBS     = -L"C:/Users/Miguel/Desktop/Dev-Cpp/MinGW32/lib" -static-libstdc++ -static-libgcc -lmingw32 -lSDLmain -lSDL  -Ofast 
+INCS     = -I"C:/Users/Miguel/Desktop/Dev-Cpp/MinGW32/include" 
+CXXINCS  = -I"C:/Users/Miguel/Desktop/Dev-Cpp/MinGW32/include" 
+BIN      = bin/emuGB.exe
+CXXFLAGS = $(CXXINCS) -I ./include   -pedantic -Ofast
+CFLAGS   = $(INCS)    -pedantic -Ofast
+RM       = rm -f
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before bin/emuGB.exe all-after
+
+
+clean: clean-custom
+	${RM} $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CPP) $(LINKOBJ) -o "bin\emuGB.exe" $(LIBS)
+
+./obj/CartSlot.o: src/CartSlot.cpp
+	$(CPP) -c src/CartSlot.cpp -o ./obj/CartSlot.o $(CXXFLAGS)
+
+./obj/emuGB.o: src/emuGB.cpp
+	$(CPP) -c src/emuGB.cpp -o ./obj/emuGB.o $(CXXFLAGS)
+
+./obj/GameBoy.o: src/GameBoy.cpp
+	$(CPP) -c src/GameBoy.cpp -o ./obj/GameBoy.o $(CXXFLAGS)
+
+./obj/gpu.o: src/gpu.cpp
+	$(CPP) -c src/gpu.cpp -o ./obj/gpu.o $(CXXFLAGS)
+
+./obj/instructionSet.o: src/instructionSet.cpp
+	$(CPP) -c src/instructionSet.cpp -o ./obj/instructionSet.o $(CXXFLAGS)
+
+./obj/MMU.o: src/MMU.cpp
+	$(CPP) -c src/MMU.cpp -o ./obj/MMU.o $(CXXFLAGS)
+
+./obj/z80gb.o: src/z80gb.cpp
+	$(CPP) -c src/z80gb.cpp -o ./obj/z80gb.o $(CXXFLAGS)
+
+./obj/keypad.o: src/keypad.cpp
+	$(CPP) -c src/keypad.cpp -o ./obj/keypad.o $(CXXFLAGS)
+
+./obj/timer.o: src/timer.cpp
+	$(CPP) -c src/timer.cpp -o ./obj/timer.o $(CXXFLAGS)
+
+./obj/emuGB_private.res: emuGB_private.rc 
+	$(WINDRES) -i emuGB_private.rc --input-format=rc -o ./obj/emuGB_private.res -O coff 
