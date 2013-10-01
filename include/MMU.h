@@ -34,8 +34,6 @@ enum MapaMemoria {
 
 class MMU {
 	private:
-		bool escrituraROM;
-		bool biosEnMemoria;
 		static const byte bios[256]; //256B
 		CartSlot *cartucho;
 		GPU *gpu;
@@ -47,15 +45,14 @@ class MMU {
 		byte IE; //Interrupt Enabler Register
 
 	public:
+		bool biosEnMemoria;
 		MMU();
 		void reset();
 		bool BIOScargada() const { return biosEnMemoria; }
-		void setEscrituraROM(bool valor) { escrituraROM = valor; }
 		void mapearCartSlot(CartSlot *cartRef);
 		void mapearGPU(GPU *gpuRef);
 		void mapearKeyPad(KeyPad *keyRef);
 		void dumpearMemoria(word ini, word fin);
-		void testMemoria(std::ofstream &salida);
 
 		byte rb(word address);
 		void rb(word address, byte &valor);

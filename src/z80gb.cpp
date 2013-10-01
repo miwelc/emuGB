@@ -7,13 +7,15 @@
 
 #include "z80gb.h"
 
+		word PC;
+		word pcAnt;
 Z80gb::Z80gb() {
 	mmu = 0;
 	
 	IME = true;
 	halt = false;
 	stop = false;
-		
+
 	rF = 0;
 	rA = 0;
 	rB = 0;
@@ -52,31 +54,40 @@ void Z80gb::conectarConMMU(MMU *mmuRef) {
 	mmu = mmuRef;
 }
 
-void Z80gb::step(int &ciclos, std::ofstream &salida) {
+void Z80gb::step(int &ciclos) {
 	byte interrupciones;
 	byte opcode;
 	
 	if(!halt && !stop) {
 		//Captación
-		opcode = mmu->rb(PC++);
-		
-		//salida << std::hex << "PC:" << PC-1 << " op:" << (unsigned short)opcode << "\t";
+		pcAnt = PC;
+		opcode = mmu->rb(PC); PC++;
 		
 		//Ejecución
 		(this->*instructions[opcode].f)();
+		if(false&&mmu->biosEnMemoria==false && PC == 0x04b4) {
+			//mmu->dumpearMemoria(0xFFF0, 0xFFFE);
+			printf("\nPC-1:%X [PC-1]:%X PC:%X [PC]:%X\n", pcAnt, mmu->rb(pcAnt), PC, mmu->rb(PC));
+			printf("IE:%X IF:%X A:%X F:%X BC:%X DE:%X HL:%X SP:%X\n\n", mmu->rb(INTERRUPT_ENABLER), mmu->rb(INTERRUPT_FLAG), rA, rF, rBC(), rDE(), rHL(), SP);
+			system("pause");
+		}
 		
 		//Actualizar contador ciclos
 		ciclos = instructions[opcode].ciclos;
+#ifndef NDEBUG
 		if(PC == 0x100) {
 			printf("0xFFFF:%X A:%X F:%X BC:%X DE:%X HL:%X SP:%X\n", (Uint8)mmu->rb(INTERRUPT_ENABLER), rA, rF, rBC(), rDE(), rHL(), SP);
 		}
+#endif
 	} else if(halt) ciclos = 4; else ciclos = 0;
 	
 	//Comprobación Interrupciones
+	interrupciones = mmu->rb(INTERRUPT_ENABLER)&mmu->rb(INTERRUPT_FLAG);
+	if(interrupciones)
+		halt = false; //Aunque IME esté desactivado (comportamiento especial de la GB)
 	if(IME) {
-		interrupciones = mmu->rb(INTERRUPT_ENABLER)&mmu->rb(INTERRUPT_FLAG);
 		if(interrupciones)
-			halt = stop = false;
+			stop = false;
 		if(interrupciones&0x01) { //VBlank
 			mmu->wb(INTERRUPT_FLAG, mmu->rb(INTERRUPT_FLAG)&0xFE);
 			ISR_40H();
@@ -142,20 +153,20 @@ short Z80gb::chkH(word n) const {
 //Con signo "wordX = n + sus"
 short Z80gb::chkCY(word n, signoB sus) const {
 	if(sus < 0)
-		return (n+sus < 0) ? 1 : 0;
+		return (n+(int32_t)sus < 0) ? 1 : 0;
 	else
-		return (n+sus > 0xFFFF) ? 1 : 0;
+		return (n+(uint32_t)sus > 0xFFFF) ? 1 : 0;
 }
 
 short Z80gb::chkCY(byte n, byte m) const { //Suma
-	return (n+m > 0xFF) ? 1 : 0;
+	return ((word)n+m > 0xFF) ? 1 : 0;
 }
 
 short Z80gb::chkCY(word n, word m) const { //Suma
-	return (n+m > 0xFFFF) ? 1 : 0;
+	return ((uint32_t)n+m > 0xFFFF) ? 1 : 0;
 }
 
 short Z80gb::chkCYres(byte n, byte m) const { //Resta
-	return (n-m < 0) ? 1 : 0;
+	return ((signoW)n-m < 0) ? 1 : 0;
 }
 

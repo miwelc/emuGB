@@ -4,7 +4,7 @@
 #include <SDL/SDL.h>
 #include <stdio.h>
 #include "tipos.h"
-#include "mmu.h"
+#include "MMU.h"
 
 #define MAP_START	SDLK_RETURN
 #define MAP_SELECT	SDLK_BACKSPACE

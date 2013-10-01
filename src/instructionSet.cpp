@@ -10,6 +10,7 @@
 
 #include "z80gb.h"
 
+	extern word PC;
 
 void Z80gb::saveRegs() {
 	rF2 = rF;
@@ -135,8 +136,8 @@ void Z80gb::LDI_A_mHL() { LD_A_mHL(); rHL( rHL()+1 ); } //0x2A
 void Z80gb::LDD_mHL_A() { LD_mHL_A(); rHL( rHL()-1 ); } //0x32
 void Z80gb::LDD_A_mHL() { LD_A_mHL(); rHL( rHL()-1 ); } //0x3A
 /// LDH
-void Z80gb::LDH_mn8o_A() { mmu->wb( 0xFF00+mmu->rb(PC++), rA); } //0xE0
-void Z80gb::LDH_A_mn8o() { mmu->rb( 0xFF00+mmu->rb(PC++), rA); } //0xF0
+void Z80gb::LDH_mn8o_A() { mmu->wb( 0xFF00+mmu->rb(PC), rA); PC++; } //0xE0
+void Z80gb::LDH_A_mn8o() { mmu->rb( 0xFF00+mmu->rb(PC), rA); PC++; } //0xF0
 
 //////////////////////
 ///  16-Bit Loads  ///
@@ -153,7 +154,7 @@ void Z80gb::LD_SP_n16() { SP = mmu->rw(PC); PC+=2; } //0x31
 void Z80gb::LD_SP_HL() { SP = rHL(); } //0xF9
 
 /// LDHL
-void Z80gb::LDHL_SP_s8() { signoB s8 = mmu->rb(PC++); rHL( SP+s8 );
+void Z80gb::LDHL_SP_s8() { signoB s8 = mmu->rb(PC); PC++; rHL( SP+s8 );
 			setFlags(0,0,chkH(rHL()),chkCY(SP,s8)); } //0xF8
 			
 /// PUSH
@@ -182,7 +183,7 @@ void Z80gb::ADD_A_H() { int acarr = chkCY(rA,rH); int hacarr = chkH(rA,rH); rA +
 void Z80gb::ADD_A_L() { int acarr = chkCY(rA,rL); int hacarr = chkH(rA,rL); rA += rL; setFlags(rA==0,0,hacarr,acarr); } //0x85
 void Z80gb::ADD_A_mHL() { byte b = mmu->rb(rHL()); int acarr = chkCY(rA,b); int hacarr = chkH(rA,b); rA += b;
 			setFlags(rA==0,0,hacarr,acarr); } //0x86
-void Z80gb::ADD_A_n8() { byte n8 = mmu->rb(PC++); int acarr = chkCY(rA,n8); int hacarr = chkH(rA,n8); rA += n8;
+void Z80gb::ADD_A_n8() { byte n8 = mmu->rb(PC); PC++; int acarr = chkCY(rA,n8); int hacarr = chkH(rA,n8); rA += n8;
 			setFlags(rA==0,0,hacarr,acarr); } //0xC6
 
 /// ADC
@@ -202,7 +203,7 @@ void Z80gb::ADC_A_L() { byte sum = CY() + rL; int acarr = chkCY(rA,sum); int hac
 			setFlags(rA==0,0,hacarr,acarr); } //0x8D
 void Z80gb::ADC_A_mHL() { byte sum = CY() + mmu->rb(rHL()); int acarr = chkCY(rA,sum); int hacarr = chkH(rA,sum); rA += sum;
 			setFlags(rA==0,0,hacarr,acarr); } //0x8E
-void Z80gb::ADC_A_n8() { byte sum = CY() + mmu->rb(PC++); int acarr = chkCY(rA,sum); int hacarr = chkH(rA,sum); rA += sum;
+void Z80gb::ADC_A_n8() { byte sum = CY() + mmu->rb(PC); PC++; int acarr = chkCY(rA,sum); int hacarr = chkH(rA,sum); rA += sum;
 			setFlags(rA==0,0,hacarr,acarr); } //0xCE
 
 /// SUB
@@ -222,7 +223,7 @@ void Z80gb::SUB_A_L() { int acarr = chkCYres(rA,rL); int hacarr = chkHres(rA,rL)
 			setFlags(rA==0,1,hacarr,acarr); } //0x95
 void Z80gb::SUB_A_mHL() { byte n8 = mmu->rb(rHL()); int acarr = chkCYres(rA,n8); int hacarr = chkHres(rA,n8); rA -= n8;
 			setFlags(rA==0,1,hacarr,acarr); } //0x96
-void Z80gb::SUB_A_n8() { byte n8 = mmu->rb(PC++); int acarr = chkCYres(rA,n8); int hacarr = chkHres(rA,n8); rA -= n8;
+void Z80gb::SUB_A_n8() { byte n8 = mmu->rb(PC); PC++; int acarr = chkCYres(rA,n8); int hacarr = chkHres(rA,n8); rA -= n8;
 			setFlags(rA==0,1,hacarr,acarr); } //0xD6
 			
 /// SBC
@@ -242,7 +243,7 @@ void Z80gb::SBC_A_L() { byte res = CY() + rL; int acarr = chkCYres(rA,res); int 
 			setFlags(rA==0,1,hacarr,acarr); } //0x9D
 void Z80gb::SBC_A_mHL() { byte res = CY() + mmu->rb(rHL()); int acarr = chkCYres(rA,res); int hacarr = chkHres(rA,res); rA -= res;
 			setFlags(rA==0,1,hacarr,acarr); } //0x9E
-void Z80gb::SBC_A_n8() { byte res = CY() + mmu->rb(PC++); int acarr = chkCYres(rA,res); int hacarr = chkHres(rA,res); rA -= res;
+void Z80gb::SBC_A_n8() { byte res = CY() + mmu->rb(PC); PC++; int acarr = chkCYres(rA,res); int hacarr = chkHres(rA,res); rA -= res;
 			setFlags(rA==0,1,hacarr,acarr); } //0xDE
 			
 /// AND
@@ -254,7 +255,7 @@ void Z80gb::AND_E() { rA &= rE; setFlags(rA==0,0,1,0); } //0xA3
 void Z80gb::AND_H() { rA &= rH; setFlags(rA==0,0,1,0); } //0xA4
 void Z80gb::AND_L() { rA &= rL; setFlags(rA==0,0,1,0); } //0xA5
 void Z80gb::AND_mHL() { rA &= mmu->rb(rHL()); setFlags(rA==0,0,1,0); } //0xA6
-void Z80gb::AND_n8() { rA &= mmu->rb(PC++); setFlags(rA==0,0,1,0); } //0xE6
+void Z80gb::AND_n8() { rA &= mmu->rb(PC); PC++; setFlags(rA==0,0,1,0); } //0xE6
 
 /// OR
 void Z80gb::OR_A() { rA |= rA; setFlags(rA==0,0,0,0); } //0xB7
@@ -265,7 +266,7 @@ void Z80gb::OR_E() { rA |= rE; setFlags(rA==0,0,0,0); } //0xB3
 void Z80gb::OR_H() { rA |= rH; setFlags(rA==0,0,0,0); } //0xB4
 void Z80gb::OR_L() { rA |= rL; setFlags(rA==0,0,0,0); } //0xB5
 void Z80gb::OR_mHL() { rA |= mmu->rb(rHL()); setFlags(rA==0,0,0,0); } //0xB6
-void Z80gb::OR_n8() { rA |= mmu->rb(PC++); setFlags(rA==0,0,0,0); } //0xF6
+void Z80gb::OR_n8() { rA |= mmu->rb(PC); PC++; setFlags(rA==0,0,0,0); } //0xF6
 
 /// XOR
 void Z80gb::XOR_A() { rA ^= rA; setFlags(rA==0,0,0,0); } //0xAF
@@ -276,7 +277,7 @@ void Z80gb::XOR_E() { rA ^= rE; setFlags(rA==0,0,0,0); } //0xAB
 void Z80gb::XOR_H() { rA ^= rH; setFlags(rA==0,0,0,0); } //0xAC
 void Z80gb::XOR_L() { rA ^= rL; setFlags(rA==0,0,0,0); } //0xAD
 void Z80gb::XOR_mHL() { rA ^= mmu->rb(rHL()); setFlags(rA==0,0,0,0); } //0xAE
-void Z80gb::XOR_n8() { rA ^= mmu->rb(PC++); setFlags(rA==0,0,0,0); } //0xEE
+void Z80gb::XOR_n8() { rA ^= mmu->rb(PC); PC++; setFlags(rA==0,0,0,0); } //0xEE
 
 /// CP
 void Z80gb::CP_A() { int acarr = chkCYres(rA,rA); int hacarr = chkHres(rA,rA); byte res = rA - rA;
@@ -295,7 +296,7 @@ void Z80gb::CP_L() { int acarr = chkCYres(rA,rL); int hacarr = chkHres(rA,rL); b
 			setFlags(res==0,1,hacarr,acarr); } //0xBD
 void Z80gb::CP_mHL() { byte n8 = mmu->rb(rHL()); int acarr = chkCYres(rA,n8); int hacarr = chkHres(rA,n8); byte res = rA - n8;
 			setFlags(res==0,1,hacarr,acarr); } //0xBE
-void Z80gb::CP_n8() { byte n8 = mmu->rb(PC++); int acarr = chkCYres(rA,n8); int hacarr = chkHres(rA,n8); byte res = rA - n8;
+void Z80gb::CP_n8() { byte n8 = mmu->rb(PC); PC++; int acarr = chkCYres(rA,n8); int hacarr = chkHres(rA,n8); byte res = rA - n8;
 			setFlags(res==0,1,hacarr,acarr); } //0xFE
 			
 /// INC
@@ -334,7 +335,7 @@ void Z80gb::ADD_HL_HL() { int acarr = chkCY(rHL(),rHL()); rHL(rHL()+rHL());
 void Z80gb::ADD_HL_SP() { int acarr = chkCY(rHL(),SP); rHL(SP+rHL());
 			setFlags(-1,0,-1,acarr); } //0x39
 			
-void Z80gb::ADD_SP_s8() { signoB s8 = mmu->rb(PC++); int acarr = chkCY(SP,s8); SP += s8;
+void Z80gb::ADD_SP_s8() { signoB s8 = mmu->rb(PC); PC++; int acarr = chkCY(SP,s8); SP += s8;
 			setFlags(0,0,-1,acarr); } //0xE8
 			
 /// INC
@@ -359,7 +360,7 @@ void Z80gb::JP_Z_n16() { if(ZF()) PC = mmu->rw(PC); else PC += 2; } //0xCA
 void Z80gb::JP_NC_n16() { if(!CY()) PC = mmu->rw(PC); else PC += 2; } //0xD2
 void Z80gb::JP_C_n16() { if(CY()) PC = mmu->rw(PC); else PC += 2; } //0xDA
 
-void Z80gb::JP_mHL() { PC = mmu->rw(rHL()); } //0xE9
+void Z80gb::JP_mHL() { PC = rHL(); } //{ PC = mmu->rw(rHL()); } //0xE9
 
 /// JR
 void Z80gb::JR_s8o() { PC += (signoB)mmu->rb(PC)+1; } //0x18
@@ -423,7 +424,7 @@ void Z80gb::CCF() { setFlags(-1,0,0,!CY()); } //0x3F
 void Z80gb::SCF() { setFlags(-1,0,0,1); } //0x37
 void Z80gb::NOP() { return;	} //0x00
 void Z80gb::HALT() { if(IME) halt = true; else PC++; } //0x76 //Comportamiento especial de la instrucción
-void Z80gb::STOP() { signoB s8 = mmu->rb(PC++); if(--rB) PC += s8; }//{ stop = true; PC++; } //0x10 0xXX //DJNZ s8
+void Z80gb::STOP() { stop = true; PC++; } //{ signoB s8 = mmu->rb(PC++); if(--rB) { PC += s8; instructions[0x10].ciclos=6;} else instructions[0x10].ciclos=4; } //0x10 0xXX //DJNZ s8
 void Z80gb::DI() { IME = false; } //0xF3
 void Z80gb::EI() { IME = true; } //0xFB
  
@@ -462,7 +463,7 @@ void Z80gb::RRC_D() { short bit = (rD&0x01); rD = ((rD >> 1) | (bit << 7)); setF
 void Z80gb::RRC_E() { short bit = (rE&0x01); rE = ((rE >> 1) | (bit << 7)); setFlags(rE==0,0,0,bit); } //0xCB 0x0B
 void Z80gb::RRC_H() { short bit = (rH&0x01); rH = ((rH >> 1) | (bit << 7)); setFlags(rH==0,0,0,bit); } //0xCB 0x0C
 void Z80gb::RRC_L() { short bit = (rL&0x01); rL = ((rL >> 1) | (bit << 7)); setFlags(rL==0,0,0,bit); } //0xCB 0x0D
-void Z80gb::RRC_mHL() { short bit; byte n8 = mmu->rb(rHL()); bit = (n8&0x01); n8 = ((n8 >> 1) | (bit << 7));
+void Z80gb::RRC_mHL() { short bit; byte n8 = mmu->rb(rHL()); bit = (n8&0x01); n8 = ((n8 >> 1) | (bit << 7)); mmu->wb(rHL(), n8);
 			setFlags(n8==0,0,0,bit); } //0xCB 0x0E
 			
 void Z80gb::RR_A() { short bit = (rA&0x01); rA = ((rA >> 1) | (((byte)CY()) << 7)); setFlags(rA==0,0,0,bit); } //0xCB 0x1F
@@ -472,7 +473,7 @@ void Z80gb::RR_D() { short bit = (rD&0x01); rD = ((rD >> 1) | (((byte)CY()) << 7
 void Z80gb::RR_E() { short bit = (rE&0x01); rE = ((rE >> 1) | (((byte)CY()) << 7)); setFlags(rE==0,0,0,bit); } //0xCB 0x1B
 void Z80gb::RR_H() { short bit = (rH&0x01); rH = ((rH >> 1) | (((byte)CY()) << 7)); setFlags(rH==0,0,0,bit); } //0xCB 0x1C
 void Z80gb::RR_L() { short bit = (rL&0x01); rL = ((rL >> 1) | (((byte)CY()) << 7)); setFlags(rL==0,0,0,bit); } //0xCB 0x1D
-void Z80gb::RR_mHL() { short bit; byte n8 = mmu->rb(rHL()); bit = (n8&0x01); n8 = ((n8 >> 1) | (((byte)CY()) << 7));
+void Z80gb::RR_mHL() { short bit; byte n8 = mmu->rb(rHL()); bit = (n8&0x01); n8 = ((n8 >> 1) | (((byte)CY()) << 7)); mmu->wb(rHL(), n8);
 			setFlags(n8==0,0,0,bit); } //0xCB 0x0E
 			
 void Z80gb::SLA_A() { short bit = (rA>>7); rA = (rA << 1); setFlags(rA==0,0,0,bit); } //0xCB 0x27
@@ -492,7 +493,7 @@ void Z80gb::SRA_D() { short bit = (rD&0x01); short msb = (rD&0x80); rD = ((rD >>
 void Z80gb::SRA_E() { short bit = (rE&0x01); short msb = (rE&0x80); rE = ((rE >> 1) | msb); setFlags(rE==0,0,0,bit); } //0xCB 0x2B
 void Z80gb::SRA_H() { short bit = (rH&0x01); short msb = (rH&0x80); rH = ((rH >> 1) | msb); setFlags(rH==0,0,0,bit); } //0xCB 0x2C
 void Z80gb::SRA_L() { short bit = (rL&0x01); short msb = (rL&0x80); rL = ((rL >> 1) | msb); setFlags(rL==0,0,0,bit); } //0xCB 0x2D
-void Z80gb::SRA_mHL() { short bit; byte n8 = mmu->rb(rHL()); short msb = (n8&0x80); bit = (n8&0x01); n8 = ((n8 >> 1) | msb);
+void Z80gb::SRA_mHL() { short bit; byte n8 = mmu->rb(rHL()); short msb = (n8&0x80); bit = (n8&0x01); n8 = ((n8 >> 1) | msb); mmu->wb(rHL(), n8);
 			setFlags(n8==0,0,0,bit); } //0xCB 0x2E
 			
 void Z80gb::SRL_A() { short bit = (rA&0x01); rA = (rA >> 1); setFlags(rA==0,0,0,bit); } //0xCB 0x3F
@@ -502,7 +503,7 @@ void Z80gb::SRL_D() { short bit = (rD&0x01); rD = (rD >> 1); setFlags(rD==0,0,0,
 void Z80gb::SRL_E() { short bit = (rE&0x01); rE = (rE >> 1); setFlags(rE==0,0,0,bit); } //0xCB 0x3B
 void Z80gb::SRL_H() { short bit = (rH&0x01); rH = (rH >> 1); setFlags(rH==0,0,0,bit); } //0xCB 0x3C
 void Z80gb::SRL_L() { short bit = (rL&0x01); rL = (rL >> 1); setFlags(rL==0,0,0,bit); } //0xCB 0x3D
-void Z80gb::SRL_mHL() { short bit; byte n8 = mmu->rb(rHL()); bit = (n8&0x01); n8 = (n8 >> 1);
+void Z80gb::SRL_mHL() { short bit; byte n8 = mmu->rb(rHL()); bit = (n8&0x01); n8 = (n8 >> 1); mmu->wb(rHL(), n8);
 			setFlags(n8==0,0,0,bit); } //0xCB 0x3E
 			
 
@@ -514,7 +515,7 @@ void Z80gb::CBops() {
 	byte opcode;
 	
 	//Captación
-	opcode = mmu->rb(PC++);
+	opcode = mmu->rb(PC); PC++;
 	
 	//Ejecución
 	(this->*CBinstructions[opcode].f)();
@@ -622,7 +623,7 @@ void Z80gb::RES_0_D() { rD &= 0xFE; } //0xCB 0x82
 void Z80gb::RES_0_E() { rE &= 0xFE; } //0xCB 0x83
 void Z80gb::RES_0_H() { rH &= 0xFE; } //0xCB 0x84
 void Z80gb::RES_0_L() { rL &= 0xFE; } //0xCB 0x85
-void Z80gb::RES_0_mHL() { rHL( mmu->rb(rHL())&0xFE ); } //0xCB 0x86
+void Z80gb::RES_0_mHL() { mmu->wb(rHL(), mmu->rb(rHL())&0xFE ); } //0xCB 0x86
 
 void Z80gb::RES_1_A() { rA &= 0xFD; } //0xCB 0x8F
 void Z80gb::RES_1_B() { rB &= 0xFD; } //0xCB 0x88
@@ -631,7 +632,7 @@ void Z80gb::RES_1_D() { rD &= 0xFD; } //0xCB 0x8A
 void Z80gb::RES_1_E() { rE &= 0xFD; } //0xCB 0x8B
 void Z80gb::RES_1_H() { rH &= 0xFD; } //0xCB 0x8C
 void Z80gb::RES_1_L() { rL &= 0xFD; } //0xCB 0x8D
-void Z80gb::RES_1_mHL() { rHL( mmu->rb(rHL())&0xFD ); } //0xCB 0x8E
+void Z80gb::RES_1_mHL() { mmu->wb(rHL(), mmu->rb(rHL())&0xFD ); } //0xCB 0x8E
 
 void Z80gb::RES_2_A() { rA &= 0xFB; } //0xCB 0x97
 void Z80gb::RES_2_B() { rB &= 0xFB; } //0xCB 0x90
@@ -640,7 +641,7 @@ void Z80gb::RES_2_D() { rD &= 0xFB; } //0xCB 0x92
 void Z80gb::RES_2_E() { rE &= 0xFB; } //0xCB 0x93
 void Z80gb::RES_2_H() { rH &= 0xFB; } //0xCB 0x94
 void Z80gb::RES_2_L() { rL &= 0xFB; } //0xCB 0x95
-void Z80gb::RES_2_mHL() { rHL( mmu->rb(rHL())&0xFB ); } //0xCB 0x96
+void Z80gb::RES_2_mHL() { mmu->wb(rHL(), mmu->rb(rHL())&0xFB ); } //0xCB 0x96
 
 void Z80gb::RES_3_A() { rA &= 0xF7; } //0xCB 0x9F
 void Z80gb::RES_3_B() { rB &= 0xF7; } //0xCB 0x98
@@ -649,7 +650,7 @@ void Z80gb::RES_3_D() { rD &= 0xF7; } //0xCB 0x9A
 void Z80gb::RES_3_E() { rE &= 0xF7; } //0xCB 0x9B
 void Z80gb::RES_3_H() { rH &= 0xF7; } //0xCB 0x9C
 void Z80gb::RES_3_L() { rL &= 0xF7; } //0xCB 0x9D
-void Z80gb::RES_3_mHL() { rHL( mmu->rb(rHL())&0xF7 ); } //0xCB 0x9E
+void Z80gb::RES_3_mHL() { mmu->wb(rHL(), mmu->rb(rHL())&0xF7 ); } //0xCB 0x9E
 
 void Z80gb::RES_4_A() { rA &= 0xEF; } //0xCB 0xA7
 void Z80gb::RES_4_B() { rB &= 0xEF; } //0xCB 0xA0
@@ -658,7 +659,7 @@ void Z80gb::RES_4_D() { rD &= 0xEF; } //0xCB 0xA2
 void Z80gb::RES_4_E() { rE &= 0xEF; } //0xCB 0xA3
 void Z80gb::RES_4_H() { rH &= 0xEF; } //0xCB 0xA4
 void Z80gb::RES_4_L() { rL &= 0xEF; } //0xCB 0xA5
-void Z80gb::RES_4_mHL() { rHL( mmu->rb(rHL())&0xEF ); } //0xCB 0xA6
+void Z80gb::RES_4_mHL() { mmu->wb(rHL(), mmu->rb(rHL())&0xEF ); } //0xCB 0xA6
 
 void Z80gb::RES_5_A() { rA &= 0xDF; } //0xCB 0xAF
 void Z80gb::RES_5_B() { rB &= 0xDF; } //0xCB 0xA8
@@ -667,7 +668,7 @@ void Z80gb::RES_5_D() { rD &= 0xDF; } //0xCB 0xAA
 void Z80gb::RES_5_E() { rE &= 0xDF; } //0xCB 0xAB
 void Z80gb::RES_5_H() { rH &= 0xDF; } //0xCB 0xAC
 void Z80gb::RES_5_L() { rL &= 0xDF; } //0xCB 0xAD
-void Z80gb::RES_5_mHL() { rHL( mmu->rb(rHL())&0xDF ); } //0xCB 0xAE
+void Z80gb::RES_5_mHL() { mmu->wb(rHL(), mmu->rb(rHL())&0xDF ); } //0xCB 0xAE
 
 void Z80gb::RES_6_A() { rA &= 0xBF; } //0xCB 0xB7
 void Z80gb::RES_6_B() { rB &= 0xBF; } //0xCB 0xB0
@@ -676,7 +677,7 @@ void Z80gb::RES_6_D() { rD &= 0xBF; } //0xCB 0xB2
 void Z80gb::RES_6_E() { rE &= 0xBF; } //0xCB 0xB3
 void Z80gb::RES_6_H() { rH &= 0xBF; } //0xCB 0xB4
 void Z80gb::RES_6_L() { rL &= 0xBF; } //0xCB 0xB5
-void Z80gb::RES_6_mHL() { rHL( mmu->rb(rHL())&0xBF ); } //0xCB 0xB6
+void Z80gb::RES_6_mHL() { mmu->wb(rHL(), mmu->rb(rHL())&0xBF ); } //0xCB 0xB6
 
 void Z80gb::RES_7_A() { rA &= 0x7F; } //0xCB 0xBF
 void Z80gb::RES_7_B() { rB &= 0x7F; } //0xCB 0xB8
@@ -685,7 +686,7 @@ void Z80gb::RES_7_D() { rD &= 0x7F; } //0xCB 0xBA
 void Z80gb::RES_7_E() { rE &= 0x7F; } //0xCB 0xBB
 void Z80gb::RES_7_H() { rH &= 0x7F; } //0xCB 0xBC
 void Z80gb::RES_7_L() { rL &= 0x7F; } //0xCB 0xBD
-void Z80gb::RES_7_mHL() { rHL( mmu->rb(rHL())&0x7F ); } //0xCB 0xBE
+void Z80gb::RES_7_mHL() { mmu->wb(rHL(), mmu->rb(rHL())&0x7F ); } //0xCB 0xBE
 
 
 
@@ -697,7 +698,7 @@ void Z80gb::SET_0_D() { rD |= 0x01; } //0xCB 0xC2
 void Z80gb::SET_0_E() { rE |= 0x01; } //0xCB 0xC3
 void Z80gb::SET_0_H() { rH |= 0x01; } //0xCB 0xC4
 void Z80gb::SET_0_L() { rL |= 0x01; } //0xCB 0xC5
-void Z80gb::SET_0_mHL() { rHL( mmu->rb(rHL())|0x01 ); } //0xCB 0xC6
+void Z80gb::SET_0_mHL() { mmu->wb(rHL(), mmu->rb(rHL())|0x01 ); } //0xCB 0xC6
 
 void Z80gb::SET_1_A() { rA |= 0x02; } //0xCB 0xCF
 void Z80gb::SET_1_B() { rB |= 0x02; } //0xCB 0xC8
@@ -706,7 +707,7 @@ void Z80gb::SET_1_D() { rD |= 0x02; } //0xCB 0xCA
 void Z80gb::SET_1_E() { rE |= 0x02; } //0xCB 0xCB
 void Z80gb::SET_1_H() { rH |= 0x02; } //0xCB 0xCC
 void Z80gb::SET_1_L() { rL |= 0x02; } //0xCB 0xCD
-void Z80gb::SET_1_mHL() { rHL( mmu->rb(rHL())|0x02 ); } //0xCB 0xCE
+void Z80gb::SET_1_mHL() { mmu->wb(rHL(), mmu->rb(rHL())|0x02 ); } //0xCB 0xCE
 
 void Z80gb::SET_2_A() { rA |= 0x04; } //0xCB 0xD7
 void Z80gb::SET_2_B() { rB |= 0x04; } //0xCB 0xD0
@@ -715,7 +716,7 @@ void Z80gb::SET_2_D() { rD |= 0x04; } //0xCB 0xD2
 void Z80gb::SET_2_E() { rE |= 0x04; } //0xCB 0xD3
 void Z80gb::SET_2_H() { rH |= 0x04; } //0xCB 0xD4
 void Z80gb::SET_2_L() { rL |= 0x04; } //0xCB 0xD5
-void Z80gb::SET_2_mHL() { rHL( mmu->rb(rHL())|0x04 ); } //0xCB 0xD6
+void Z80gb::SET_2_mHL() { mmu->wb(rHL(), mmu->rb(rHL())|0x04 ); } //0xCB 0xD6
 
 void Z80gb::SET_3_A() { rA |= 0x08; } //0xCB 0xDF
 void Z80gb::SET_3_B() { rB |= 0x08; } //0xCB 0xD8
@@ -724,7 +725,7 @@ void Z80gb::SET_3_D() { rD |= 0x08; } //0xCB 0xDA
 void Z80gb::SET_3_E() { rE |= 0x08; } //0xCB 0xDB
 void Z80gb::SET_3_H() { rH |= 0x08; } //0xCB 0xDC
 void Z80gb::SET_3_L() { rL |= 0x08; } //0xCB 0xDD
-void Z80gb::SET_3_mHL() { rHL( mmu->rb(rHL())|0x08 ); } //0xCB 0xDE
+void Z80gb::SET_3_mHL() { mmu->wb(rHL(), mmu->rb(rHL())|0x08 ); } //0xCB 0xDE
 
 void Z80gb::SET_4_A() { rA |= 0x10; } //0xCB 0xE7
 void Z80gb::SET_4_B() { rB |= 0x10; } //0xCB 0xE0
@@ -733,7 +734,7 @@ void Z80gb::SET_4_D() { rD |= 0x10; } //0xCB 0xE2
 void Z80gb::SET_4_E() { rE |= 0x10; } //0xCB 0xE3
 void Z80gb::SET_4_H() { rH |= 0x10; } //0xCB 0xE4
 void Z80gb::SET_4_L() { rL |= 0x10; } //0xCB 0xE5
-void Z80gb::SET_4_mHL() { rHL( mmu->rb(rHL())|0x10 ); } //0xCB 0xE6
+void Z80gb::SET_4_mHL() { mmu->wb(rHL(), mmu->rb(rHL())|0x10 ); } //0xCB 0xE6
 
 void Z80gb::SET_5_A() { rA |= 0x20; } //0xCB 0xEF
 void Z80gb::SET_5_B() { rB |= 0x20; } //0xCB 0xE8
@@ -742,7 +743,7 @@ void Z80gb::SET_5_D() { rD |= 0x20; } //0xCB 0xEA
 void Z80gb::SET_5_E() { rE |= 0x20; } //0xCB 0xEB
 void Z80gb::SET_5_H() { rH |= 0x20; } //0xCB 0xEC
 void Z80gb::SET_5_L() { rL |= 0x20; } //0xCB 0xED
-void Z80gb::SET_5_mHL() { rHL( mmu->rb(rHL())|0x20 ); } //0xCB 0xEE
+void Z80gb::SET_5_mHL() { mmu->wb(rHL(), mmu->rb(rHL())|0x20 ); } //0xCB 0xEE
 
 void Z80gb::SET_6_A() { rA |= 0x40; } //0xCB 0xF7
 void Z80gb::SET_6_B() { rB |= 0x40; } //0xCB 0xF0
@@ -751,7 +752,7 @@ void Z80gb::SET_6_D() { rD |= 0x40; } //0xCB 0xF2
 void Z80gb::SET_6_E() { rE |= 0x40; } //0xCB 0xF3
 void Z80gb::SET_6_H() { rH |= 0x40; } //0xCB 0xF4
 void Z80gb::SET_6_L() { rL |= 0x40; } //0xCB 0xF5
-void Z80gb::SET_6_mHL() { rHL( mmu->rb(rHL())|0x40 ); } //0xCB 0xF6
+void Z80gb::SET_6_mHL() { mmu->wb(rHL(), mmu->rb(rHL())|0x40 ); } //0xCB 0xF6
 
 void Z80gb::SET_7_A() { rA |= 0x80; } //0xCB 0xFF
 void Z80gb::SET_7_B() { rB |= 0x80; } //0xCB 0xF8
@@ -760,10 +761,11 @@ void Z80gb::SET_7_D() { rD |= 0x80; } //0xCB 0xFA
 void Z80gb::SET_7_E() { rE |= 0x80; } //0xCB 0xFB
 void Z80gb::SET_7_H() { rH |= 0x80; } //0xCB 0xFC
 void Z80gb::SET_7_L() { rL |= 0x80; } //0xCB 0xFD
-void Z80gb::SET_7_mHL() { rHL( mmu->rb(rHL())|0x80 ); } //0xCB 0xFE
+void Z80gb::SET_7_mHL() { mmu->wb(rHL(), mmu->rb(rHL())|0x80 ); } //0xCB 0xFE
 
 void Z80gb::noImplementado() {
-	printf("Opcode %X no implementado\n", mmu->rb(PC-1));
+	printf("Opcode %X no implementado\n(PC: %X, [PC+1]: %X, [PC-1]: %X, [PC-2]: %X)\n",
+			mmu->rb(PC-1), PC-1, mmu->rb(PC), mmu->rb(PC-2), mmu->rb(PC-3));
 }
 
 Z80gb::Instruccion Z80gb::instructions[] = {

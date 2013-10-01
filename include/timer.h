@@ -2,7 +2,7 @@
 #define _TIMER_H
 
 #include <stdio.h>
-#include "mmu.h"
+#include "MMU.h"
 
 const int BASE_CONTADOR_INC = 4096; //Hz
 

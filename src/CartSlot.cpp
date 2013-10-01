@@ -15,6 +15,10 @@ CartSlot::CartSlot() {
 	BytesERAM = 0;
 	externalRAM = 0;
 	ROMCargada = false;
+	escrituraROM = false;
+	ROMBank = 1;
+	RAMBank = 0;
+	MBCMode = 0;
 }
 
 CartSlot::~CartSlot() {
@@ -36,6 +40,10 @@ void CartSlot::cargarROM(const char* dir) {
 	}
 	
 	archivo.open(dir, ios::binary);
+	if(archivo.fail()) {
+		printf("Error: no se ha podido abrir el archivo '%s'", dir);
+		exit(-1);
+	}
 
 	//Calculamos tamaño
 	archivo.seekg(0, ios::end);
@@ -47,6 +55,8 @@ void CartSlot::cargarROM(const char* dir) {
 	archivo.read((char*)ROMdata, BytesROM);
 	
 	archivo.close();
+	
+	MBC = ROMdata[CARTTYPE];
 	
 	//Creamos la External RAM
 	switch(ROMdata[RAMSIZE]) {
@@ -69,7 +79,7 @@ void CartSlot::cargarROM(const char* dir) {
 	
 	ROMCargada = true;
 	
-	printf("CartSlot: ROM cargada (ROM:%iKb ERAM:%iKb), ", BytesROM/1024, BytesERAM/1024);
+	printf("CartSlot: ROM cargada (ROM:%iKb MBC:%i ERAM:%iKb), ", BytesROM/1024, MBC, BytesERAM/1024);
 	for(int i = 0; i < 16; i++)
 		printf("%c", ROMdata[TITLE+i]);
 	printf("\n");
@@ -81,40 +91,63 @@ void CartSlot::cargarROM(const char* dir) {
 ///////////////////
 
 byte CartSlot::rb(word address) {
+	if(address >= 0x4000)
+		address = (address-0x4000) + ROMBank*0x4000;
+		
 	assert(address < BytesROM);
 	
 	return ROMdata[address];
 }
 
-void CartSlot::rb(word address, byte &valor) {
-	assert(address < BytesROM);
-	
-	valor = ROMdata[address];
+void CartSlot::rb(word address, byte &valor) {	
+	valor = rb(address);
 }
 
 word CartSlot::rw(word address) {
-	assert(address < BytesROM);
-	
-	return ROMdata[address] + (ROMdata[address+1] << 8);
+	return rb(address) | (rb(address+1) << 8);
 }
 
-void CartSlot::rw(word address, word &valor) {
-	assert(address < BytesROM);
-	
-	valor = ROMdata[address] + (ROMdata[address+1] << 8);
+void CartSlot::rw(word address, word &valor) {	
+	valor = rw(address);
 }
 
-void CartSlot::wb(word address, byte valor) {
-	assert(address < BytesROM);
-	
-	ROMdata[address] = valor;
+void CartSlot::wb(word address, byte valor) {	
+	if(escrituraROM) {
+		word addressTmp = address;
+		if(addressTmp >= 0x4000)
+			addressTmp = (addressTmp-0x4000) + ROMBank*0x4000;
+		assert(addressTmp < BytesROM);
+		ROMdata[addressTmp] = valor;
+	}
+		
+	switch(address & 0xF000) {
+		case 0x2000:	//ROM Bank Lbits
+		case 0x3000:
+			valor &= 0x1F; //5bits
+			if(valor == 0) valor = 1;
+			ROMBank = (ROMBank & 0x60) | valor;
+			break;
+			
+		case 0x4000:	//ROM Bank Hbits / RAM Bank Lbits
+		case 0x5000:
+			valor &= 0x03; //2bits
+			if(MBCMode == 0)
+				ROMBank = (ROMBank & 0x1F) | (valor << 5);
+			else
+				RAMBank = valor;
+			break;
+			
+		case 0x6000:
+		case 0x7000:
+			valor &= 0x01;
+			MBCMode = valor;
+			break;
+	}
 }
 
 void CartSlot::ww(word address, word valor) {
-	assert(address < BytesROM);
-	
-	ROMdata[address] = (valor & 0xFF);
-	ROMdata[address+1] = (valor >> 8);
+	wb(address, valor & 0xFF);
+	wb(address+1, valor >> 8);
 }
 
 
@@ -123,39 +156,42 @@ void CartSlot::ww(word address, word valor) {
 /// ExternalRAM ///
 ///////////////////
 
+		extern word PC, pcAnt;
 byte CartSlot::rbERAM(word address) {
+	address += RAMBank*0x2000;
+	
+	if(address >= BytesERAM) {
+		printf("%X %X\n", pcAnt, PC);
+	}
 	assert(address < BytesERAM);
 	
 	return externalRAM[address];
 }
 
 void CartSlot::rbERAM(word address, byte &valor) {
-	assert(address < BytesERAM);
-	
-	valor = externalRAM[address];
+	valor = rbERAM(address);
 }
 
-word CartSlot::rwERAM(word address) {
-	assert(address < BytesERAM);
-	
-	return externalRAM[address] + (externalRAM[address+1] << 8);
+word CartSlot::rwERAM(word address) {	
+	return rbERAM(address) + (rbERAM(address+1) << 8);
 }
 
 void CartSlot::rwERAM(word address, word &valor) {
-	assert(address < BytesERAM);
-	
-	valor = externalRAM[address] + (externalRAM[address+1] << 8);
+	valor = rwERAM(address);
 }
 
 void CartSlot::wbERAM(word address, byte valor) {
+	address += RAMBank*0x2000;
+	
+	if(address >= BytesERAM) {
+		printf("%X %X\n", pcAnt, PC);
+	}
 	assert(address < BytesERAM);
 	
 	externalRAM[address] = valor;
 }
 
-void CartSlot::wwERAM(word address, word valor) {
-	assert(address < BytesERAM);
-	
-	externalRAM[address] = (valor & 0xFF);
-	externalRAM[address+1] = (valor >> 8);
+void CartSlot::wwERAM(word address, word valor) {	
+	wbERAM(address, valor & 0xFF);
+	wbERAM(address+1, valor >> 8);
 }

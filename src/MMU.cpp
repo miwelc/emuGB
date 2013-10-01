@@ -7,8 +7,9 @@
 
 #include "MMU.h"
 
+extern word PC, pcAnt;
+
 MMU::MMU() {
-	escrituraROM = false;
 	cartucho = 0;
 	for(int i = 0; i < 8192; i++)
 		workingRAM[i] = 0;
@@ -56,7 +57,7 @@ byte MMU::rb(word address) {
 					printf("MMU: Bios finalizada, descargada de la memoria\n");
 					biosEnMemoria = false;
 					dumpearMemoria(0xFF05, 0xFF85);
-					return cartucho->rb(address);
+					cartucho->rb(address);
 				} else
 					return bios[address];
 			} else
@@ -112,19 +113,20 @@ byte MMU::rb(word address) {
 					break;
 					
 				case MAPPED_IO:
-					if(address < ZEROPAGERAM)
-						if(address == KEYPAD_REG)
+					if(address < ZEROPAGERAM) {
+						if(address == KEYPAD_REG) {
 							return keypad->rb();
-						else {
-							switch(address&0x00F0) {case 0x10: case 0x20: case 0x30: return 0;} //audio
+						} else {
+							//switch(address&0x00F0) {case 0x10: case 0x20: case 0x30: return 0;} //audio
 							assert(address-MAPPED_IO < 128);
 							return IO[address-MAPPED_IO];
 						}
-					else /// ZERO PAGE RAM
+					} else {/// ZERO PAGE RAM
 						if(address == INTERRUPT_ENABLER)
 							return IE;
 						else
 							return ZRAM[address-ZEROPAGERAM];
+					}
 					break;
 			}
 			break;
@@ -140,11 +142,11 @@ void MMU::rb(word address, byte &valor) {
 }
 
 word MMU::rw(word address) {
-	return rb(address) + (rb(address+1) << 8);
+	return rb(address) | (rb(address+1) << 8);
 }
 
 void MMU::rw(word address, word &valor) {
-	valor = rb(address) + (rb(address+1) << 8);
+	valor = rb(address) | (rb(address+1) << 8);
 }
 
 
@@ -156,23 +158,14 @@ void MMU::rw(word address, word &valor) {
 void MMU::wb(word address, byte valor) {
 	switch(address & 0xF000) {
 		case BANK0:
-			if(escrituraROM)
-				if(address >= ENDBIOS || biosEnMemoria == false)
-					cartucho->wb(address, valor);
-			break;
-			
 		case 0x1000:
 		case 0x2000:
 		case 0x3000:
-			if(escrituraROM)
-				cartucho->wb(address, valor);
-			break;
-			
 		case BANKX:
 		case 0x5000:
 		case 0x6000:
 		case 0x7000:
-			if(escrituraROM)
+			if(address >= ENDBIOS || biosEnMemoria == false)
 				cartucho->wb(address, valor);
 			break;
 			
@@ -208,30 +201,35 @@ void MMU::wb(word address, byte valor) {
 					break;
 					
 				case OAM:
-					if(address-OAM < 0xA0) gpu->wbOAM(address-OAM, valor);
+					if(address < ENDOAM) gpu->wbOAM(address-OAM, valor);
 					break;
 					
 				case MAPPED_IO:
 					if(address < ZEROPAGERAM) {
-						if(address == KEYPAD_REG)
+						if(address == KEYPAD_REG) {
 							keypad->wb(valor);
-						else {
-							switch(address&0x00F0) {case 0x10: case 0x20: case 0x30: return;} //audio
+						} else {
+							//switch(address&0x00F0) {case 0x10: case 0x20: case 0x30: return;} //audio
 							assert(address-MAPPED_IO < 128);
-							IO[address-MAPPED_IO] = valor;
 							if(address == DMA) {
-								word dest = 0xFE00;
-								for(word src = (valor<<8); src <= ((valor<<8)|0x9F); src++)
-									wb(dest++, rb(src));
+								for(word src = (valor<<8), dest = OAM; dest <= ENDOAM; src++, dest++)
+									wb(dest, rb(src));
 							} else if(address == DIVIDER)
-								IO[DIVIDER-MAPPED_IO] = 0;
+								IO[address-MAPPED_IO] = 0;
+							else
+								IO[address-MAPPED_IO] = valor;
 						}
 					}
-					else /// ZERO PAGE RAM
+					else {/// ZERO PAGE RAM
 						if(address == INTERRUPT_ENABLER)
 							IE = valor;
-						else
+						else {
 							ZRAM[address-ZEROPAGERAM] = valor;
+							if(address == 0xFF86) {
+								printf("\n%X   PC-1:%X [PC-1]:%X PC:%X [PC]:%X\n", valor, pcAnt, rb(pcAnt), PC, rb(PC));
+							}
+						}
+					}
 					break;
 			}
 			break;
@@ -252,7 +250,7 @@ void MMU::dumpearMemoria(word ini, word fin) {
 		printf("%X  ", b);
 	printf("\n");
 	
-	for(word i = ini&0xFFF0; i <= fin; i += 0x10) {
+	for(int32_t i = ini&0xFFF0; i <= fin; i += 0x10) {
 		printf("[%X]\t", i);
 		for(word b = 0x00; b <= 0x0F; b++) {
 			if((rb(i+b)&0xF0) == 0x00)
@@ -262,22 +260,6 @@ void MMU::dumpearMemoria(word ini, word fin) {
 		}
 		printf("\n");
 	}
-}
-
-void MMU::testMemoria(std::ofstream &salida) {
-	bool aux = escrituraROM;
-	bool aux2 = biosEnMemoria;
-	escrituraROM = true;
-	
-	for(word b = ENDBIOS; b < 0xFFFF; b++) {
-		wb(b, 0x22);
-		if(rb(b) != 0x22)
-			salida << std::hex << "MMU: ERROR EN 0x" << b << std::endl;
-	}
-	
-	escrituraROM = aux;
-	biosEnMemoria = aux2;
-	system("pause");
 }
 
 /////////////////////////////

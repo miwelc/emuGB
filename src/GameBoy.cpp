@@ -41,7 +41,6 @@ void GameBoy::cargarROM(const char *dir) {
 void GameBoy::run() {
 	int nCiclosInstruccion;
 	bool finFrame;
-	std::ofstream salida("./e.txt");
 	
 	estado = ON;
 	printf("GameBoy: Emulaci%cn iniciada\n\n",0xA2);
@@ -49,7 +48,7 @@ void GameBoy::run() {
 	
 	for(;;) {
 		//Ejecuta siguiente instrucción
-		z80.step(nCiclosInstruccion, salida);
+		z80.step(nCiclosInstruccion);
 		
 		//Cede control a la GPU
 		finFrame = gpu.step(nCiclosInstruccion);

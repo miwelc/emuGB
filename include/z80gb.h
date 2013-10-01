@@ -30,7 +30,7 @@ class Z80gb {
 		Z80gb();
 		void reset();
 		void conectarConMMU(MMU *mmuRef);
-		void step(int &ciclos, std::ofstream &salida);
+		void step(int &ciclos);
 		
 		//Interrupciones
 		void ISR_40H();
@@ -64,18 +64,17 @@ class Z80gb {
 		
 		/// REGISTROS DE 16BITS
 		word SP;
-		word PC;
 		
-		word rAF() { return (rA << 8); } //No aparece F en rAF
-		void rAF(word AF) { rA = (AF >> 8); }
+		word rAF() { return (rA << 8) | rF; } //¿No aparece F en rAF?
+		void rAF(word AF) { rF = (AF & 0xFF); rA = (AF >> 8); }
 		
-		word rBC() { return rC + (rB << 8); }
+		word rBC() { return rC | (rB << 8); }
 		void rBC(word BC) { rC = (BC & 0xFF); rB = (BC >> 8); }
 		
-		word rDE() { return rE + (rD << 8); }
+		word rDE() { return rE | (rD << 8); }
 		void rDE(word DE) { rE = (DE & 0xFF); rD = (DE >> 8); }
 		
-		word rHL() { return rL + (rH << 8); }
+		word rHL() { return (rL | (rH << 8)); }
 		void rHL(word HL) { rL = (HL & 0xFF); rH = (HL >> 8); }
 		
 		/// FLAGS

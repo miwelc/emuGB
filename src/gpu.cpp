@@ -69,7 +69,7 @@ bool GPU::step(int ciclos) {
 		case H_BLANK:
 			if(contadorCiclos >= 204) {
 				contadorCiclos -= 204;
-				dibujarLinea();				
+				dibujarLinea();
 				mmu->wb(LY, linea++);
 				if(linea == VENTANA_HEIGHT) {
 					//Interrupción V-Blank
@@ -268,6 +268,7 @@ word GPU::getLineOfTile(VRAM_MEM tileSet, byte nTile, int nfilaTile) {
 	return filaRes;
 }
 
+//Incluye limitación de la GameBoy de 10 sprites por línea
 void GPU::dibujarLineaDeSprites() {
 	ModoSprites modoSprites;
 	byte lcdc = mmu->rb(LCDC);
@@ -279,18 +280,20 @@ void GPU::dibujarLineaDeSprites() {
 	byte flags;
 	bool prioridad;
 	bool hFlip;
+	int spritesDibujados = 0;
 	
 	if(lcdc&0x04) //Modo Sprites
 		modoSprites = MODO_8x16;
 	else modoSprites = MODO_8x8;
 	
 	//Recorremos la lista de Sprites en OAM
-	for(word i = OAM_MEM; i < END_OAM_MEM; i += TAM_SPRITE_ATTRIBUTE) {
+	for(word i = OAM_MEM; i < END_OAM_MEM && spritesDibujados < 10; i += TAM_SPRITE_ATTRIBUTE) {
 		ySprite = mmu->rb(i);
 		xSprite = mmu->rb(i+1);
 		if(ySprite > 0 && xSprite > 0) { //Si está en pantalla
 			ySprite -= 16; xSprite -= 8; //Corregimos coordenadas
 			if(ySprite <= linea && ySprite+modoSprites > linea) { //Si está en la linea a dibujar
+				spritesDibujados++;
 				nSprite = mmu->rb(i+2);
 				
 				if(modoSprites == MODO_8x16) //LSB a 0

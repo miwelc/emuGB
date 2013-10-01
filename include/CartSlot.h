@@ -43,16 +43,22 @@ enum CabeceraCartucho {
 
 class CartSlot {
 	private:
+		bool escrituraROM;
 		unsigned int BytesROM;
 		byte *ROMdata;
 		bool ROMCargada;
 		unsigned int BytesERAM;
 		byte *externalRAM;
+		byte MBC;
+		byte MBCMode;
+		byte ROMBank;
+		byte RAMBank;
 
 	public:
 		CartSlot();
 		~CartSlot();
 		void cargarROM(const char* dir);
+		void setEscrituraROM(bool valor) { escrituraROM = valor; }
 
 		byte rb(word address);
 		void rb(word address, byte &valor);
