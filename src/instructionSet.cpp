@@ -411,7 +411,7 @@ void Z80gb::RET_NC() { if(!CY()) { PC = mmu->rw(SP); SP+=2; } } //0xD0
 void Z80gb::RET_C() { if(CY()) { PC = mmu->rw(SP); SP+=2; } } //0xD8
 
 /// RETI
-void Z80gb::RETI() { loadRegs(); PC = mmu->rw(SP); SP+=2; IME = true; } //0xD9
+void Z80gb::RETI() { /*loadRegs();*/ PC = mmu->rw(SP); SP+=2; IME = true; } //0xD9
 
 //////////////////////
 ///     Extra      ///
@@ -424,7 +424,7 @@ void Z80gb::CCF() { setFlags(-1,0,0,!CY()); } //0x3F
 void Z80gb::SCF() { setFlags(-1,0,0,1); } //0x37
 void Z80gb::NOP() { return;	} //0x00
 void Z80gb::HALT() { if(IME) halt = true; else PC++; } //0x76 //Comportamiento especial de la instrucción
-void Z80gb::STOP() { stop = true; PC++; } //{ signoB s8 = mmu->rb(PC++); if(--rB) { PC += s8; instructions[0x10].ciclos=6;} else instructions[0x10].ciclos=4; } //0x10 0xXX //DJNZ s8
+void Z80gb::STOP() { stop = true; PC++; } //{ signoB s8 = mmu->rb(PC); PC++; if(--rB) { PC += s8; instructions[0x10].ciclos=6;} else instructions[0x10].ciclos=4; } //0x10 0xXX //DJNZ s8
 void Z80gb::DI() { IME = false; } //0xF3
 void Z80gb::EI() { IME = true; } //0xFB
  

@@ -53,6 +53,7 @@ class CartSlot {
 		byte MBCMode;
 		byte ROMBank;
 		byte RAMBank;
+		byte RAMBankEnabled;
 
 	public:
 		CartSlot();

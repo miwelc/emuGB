@@ -65,12 +65,6 @@ void Z80gb::step(int &ciclos) {
 		
 		//Ejecución
 		(this->*instructions[opcode].f)();
-		if(false&&mmu->biosEnMemoria==false && PC == 0x04b4) {
-			//mmu->dumpearMemoria(0xFFF0, 0xFFFE);
-			printf("\nPC-1:%X [PC-1]:%X PC:%X [PC]:%X\n", pcAnt, mmu->rb(pcAnt), PC, mmu->rb(PC));
-			printf("IE:%X IF:%X A:%X F:%X BC:%X DE:%X HL:%X SP:%X\n\n", mmu->rb(INTERRUPT_ENABLER), mmu->rb(INTERRUPT_FLAG), rA, rF, rBC(), rDE(), rHL(), SP);
-			system("pause");
-		}
 		
 		//Actualizar contador ciclos
 		ciclos = instructions[opcode].ciclos;
@@ -91,15 +85,19 @@ void Z80gb::step(int &ciclos) {
 		if(interrupciones&0x01) { //VBlank
 			mmu->wb(INTERRUPT_FLAG, mmu->rb(INTERRUPT_FLAG)&0xFE);
 			ISR_40H();
-		} else
+		}
 		if(interrupciones&0x02) { //LCDC
 			mmu->wb(INTERRUPT_FLAG, mmu->rb(INTERRUPT_FLAG)&0xFD);
 			ISR_48H();
-		} else
+		}
 		if(interrupciones&0x04) { //Counter
 			mmu->wb(INTERRUPT_FLAG, mmu->rb(INTERRUPT_FLAG)&0xFB);
 			ISR_50H();
-		} else
+		}
+		if(interrupciones&0x08) { //Serial I/O Transfer Complete
+			mmu->wb(INTERRUPT_FLAG, mmu->rb(INTERRUPT_FLAG)&0xF7);
+			ISR_58H();
+		}
 		if(interrupciones&0x10) { //Keypad
 			mmu->wb(INTERRUPT_FLAG, mmu->rb(INTERRUPT_FLAG)&0xEF);
 			ISR_60H();

@@ -35,6 +35,10 @@ void GPU::conectarConMMU(MMU *mmuRef) {
 
 bool GPU::step(int ciclos) {
 	bool finFrame = false;
+	
+	byte lcdc = mmu->rb(LCDC);
+	if((lcdc&0x80) == 0) return false;
+	
 	contadorCiclos += ciclos;
 	
 	if(mmu->rb(LYC) == mmu->rb(LY)) { //LYC = LY
@@ -48,7 +52,7 @@ bool GPU::step(int ciclos) {
 			if(contadorCiclos >= 172) {
 				contadorCiclos -= 172;
 				//Cambiamos a modo OAM-RAM
-				mmu->wb(STAT, ((mmu->rb(STAT)|0x10)&0x10));
+				mmu->wb(STAT, ((mmu->rb(STAT)|0x02)&0xFE));
 				if(mmu->rb(STAT)&0x20) //Interrupción OAM elegida?
 					mmu->wb(INTERRUPT_FLAG, (mmu->rb(INTERRUPT_FLAG)|0x02));
 				estado = SCANLINE_OAM;
@@ -59,7 +63,7 @@ bool GPU::step(int ciclos) {
 			if(contadorCiclos >= 80) {
 				contadorCiclos -= 80;
 				//Cambiamos a modo H-Blank
-				mmu->wb(STAT, (mmu->rb(STAT)&0xF4));
+				mmu->wb(STAT, (mmu->rb(STAT)&0xFC));
 				if(mmu->rb(STAT)&0x08) //Interrupción H-Blank elegida?
 					mmu->wb(INTERRUPT_FLAG, (mmu->rb(INTERRUPT_FLAG)|0x02));
 				estado = H_BLANK;
@@ -70,6 +74,7 @@ bool GPU::step(int ciclos) {
 			if(contadorCiclos >= 204) {
 				contadorCiclos -= 204;
 				dibujarLinea();
+				//actualizarPantalla();
 				mmu->wb(LY, linea++);
 				if(linea == VENTANA_HEIGHT) {
 					//Interrupción V-Blank
@@ -82,7 +87,7 @@ bool GPU::step(int ciclos) {
 				} else {//Volvemos al estado inicial para la siguiente linea ///Quitar este bloque hace ganar muchos frames
 					estado = SCANLINE_VRAM;
 					//Cambiamos a modo transferir datos al LCD Driver
-					mmu->wb(STAT, (mmu->rb(STAT)|0x11));
+					mmu->wb(STAT, (mmu->rb(STAT)|0x03));
 				}
 			}
 			break;
@@ -93,7 +98,7 @@ bool GPU::step(int ciclos) {
 				mmu->wb(LY, linea++);
 				if(linea > 153) {
 					//Cambiamos a modo transferir datos al LCD Driver
-					mmu->wb(STAT, (mmu->rb(STAT)|0x11));
+					mmu->wb(STAT, (mmu->rb(STAT)|0x03));
 					actualizarPantalla();
 					ajustarTiming();
 					linea = 0;
@@ -113,7 +118,7 @@ void GPU::iniciar() {
 	ticks = 0;
 	framesSegundo = 0;
 	framesSegundoViejos = 0;
-	delay = 8;
+	delay = DEFAULT_DELAY;
 	
 	if(SDL_Init(SDL_INIT_VIDEO) < 0)
         printf("GPU: ERROR No se ha podido iniciar SDL\n");
@@ -242,7 +247,7 @@ void GPU::printLineOfTile(VRAM_MEM tileSet, byte nTile, int nfilaTile, int xTile
 	datosFila = getLineOfTile(tileSet, nTile, nfilaTile);
 	for(int x = xTile; x < 8 && x+xPantalla < VENTANA_WIDTH; x++) {
 		codColor = ((datosFila >> (14-x*2))&0x03);
-		setPixel(xPantalla + x, this->linea, getColor(codColor));
+		setPixel(xPantalla + x, this->linea, getColor(codColor, BGP));
 	}
 }
 
@@ -287,11 +292,14 @@ void GPU::dibujarLineaDeSprites() {
 	else modoSprites = MODO_8x8;
 	
 	//Recorremos la lista de Sprites en OAM
-	for(word i = OAM_MEM; i < END_OAM_MEM && spritesDibujados < 10; i += TAM_SPRITE_ATTRIBUTE) {
+	for(word i = END_OAM_MEM-TAM_SPRITE_ATTRIBUTE; i >= OAM_MEM && spritesDibujados < 10; i -= TAM_SPRITE_ATTRIBUTE) {
 		ySprite = mmu->rb(i);
 		xSprite = mmu->rb(i+1);
 		if(ySprite > 0 && xSprite > 0) { //Si está en pantalla
-			ySprite -= 16; xSprite -= 8; //Corregimos coordenadas
+			//Corregimos coordenadas
+			xSprite -= 8;
+			ySprite -= 16;
+			
 			if(ySprite <= linea && ySprite+modoSprites > linea) { //Si está en la linea a dibujar
 				spritesDibujados++;
 				nSprite = mmu->rb(i+2);
@@ -302,9 +310,9 @@ void GPU::dibujarLineaDeSprites() {
 				flags = mmu->rb(i+3);
 				//Prioridad
 				if(flags&0x80)
-					prioridad = true;
-				else
 					prioridad = false;
+				else
+					prioridad = true;
 				
 				//Paletas
 				if(flags&0x08)
@@ -389,6 +397,7 @@ Color GPU::getColor(byte codColor, RegistrosGPU paleta) {
 		case 2:
 			return DARK_GREY;
 		case 3:
+		default:
 			return BLACK;
 	}
 }
@@ -403,7 +412,7 @@ void GPU::vaciarPantalla() {
 	for(int x = 0; x < VENTANA_WIDTH; x++)
 		for(int y = 0; y < VENTANA_HEIGHT; y++)
 			setPixel(x, y, WHITE);
-	actualizarPantalla();
+	//actualizarPantalla();
 }
 
 void GPU::filtroCRT() {

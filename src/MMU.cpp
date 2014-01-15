@@ -56,6 +56,7 @@ byte MMU::rb(word address) {
 				if(address == ENDBIOS) {
 					printf("MMU: Bios finalizada, descargada de la memoria\n");
 					biosEnMemoria = false;
+					wb(0xFF48, 0xFF); wb(0xFF49, 0xFF); //ÀEs realmente necesario?
 					dumpearMemoria(0xFF05, 0xFF85);
 					cartucho->rb(address);
 				} else
@@ -109,7 +110,7 @@ byte MMU::rb(word address) {
 					break;
 					
 				case OAM:
-					return address-OAM < 0xA0 ? gpu->rbOAM(address-OAM) : 0;
+					return address < ENDOAM ? gpu->rbOAM(address-OAM) : 0;
 					break;
 					
 				case MAPPED_IO:
@@ -117,7 +118,7 @@ byte MMU::rb(word address) {
 						if(address == KEYPAD_REG) {
 							return keypad->rb();
 						} else {
-							//switch(address&0x00F0) {case 0x10: case 0x20: case 0x30: return 0;} //audio
+							switch(address&0x00F0) {case 0x10: case 0x20: case 0x30: return 0;} //audio
 							assert(address-MAPPED_IO < 128);
 							return IO[address-MAPPED_IO];
 						}
@@ -132,9 +133,10 @@ byte MMU::rb(word address) {
 			break;
 			
 		default:
-			return 0;
 			break;
 	}
+	
+	return 0;
 }
 
 void MMU::rb(word address, byte &valor) {
@@ -209,15 +211,16 @@ void MMU::wb(word address, byte valor) {
 						if(address == KEYPAD_REG) {
 							keypad->wb(valor);
 						} else {
-							//switch(address&0x00F0) {case 0x10: case 0x20: case 0x30: return;} //audio
+							switch(address&0x00F0) {case 0x10: case 0x20: case 0x30: return;} //audio
 							assert(address-MAPPED_IO < 128);
 							if(address == DMA) {
 								for(word src = (valor<<8), dest = OAM; dest <= ENDOAM; src++, dest++)
 									wb(dest, rb(src));
 							} else if(address == DIVIDER)
 								IO[address-MAPPED_IO] = 0;
-							else
+							else {
 								IO[address-MAPPED_IO] = valor;
+							}
 						}
 					}
 					else {/// ZERO PAGE RAM
@@ -232,6 +235,9 @@ void MMU::wb(word address, byte valor) {
 					}
 					break;
 			}
+			break;
+			
+		default:
 			break;
 	}
 }

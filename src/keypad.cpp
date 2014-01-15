@@ -33,6 +33,9 @@ void KeyPad::botonPulsado(byte bots) {
 
 void KeyPad::botonSoltado(byte bots) {
 	botones |= (bots^0xFF);
+	//TŽcnicamente no deber’a producirse una interrupci—n al soltar el bot—n,
+	//pero debido al bouncing se produce y puede que algœn juego espere este efecto.
+	mmu->wb(INTERRUPT_FLAG, (mmu->rb(INTERRUPT_FLAG)|0x10));
 }
 
 byte KeyPad::rb() {
@@ -77,7 +80,7 @@ void KeyPad::comprobarPulsadas() {
 void KeyPad::comprobarSoltadas() {
 	Uint8 *keystate = SDL_GetKeyState(NULL);
 	
-	if(!keystate[SDLK_RETURN])
+	if(!keystate[MAP_START])
 		botonSoltado(START);
 	if(!keystate[MAP_SELECT])
 		botonSoltado(SELECT);

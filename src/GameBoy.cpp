@@ -41,6 +41,7 @@ void GameBoy::cargarROM(const char *dir) {
 void GameBoy::run() {
 	int nCiclosInstruccion;
 	bool finFrame;
+	int iter = 0;
 	
 	estado = ON;
 	printf("GameBoy: Emulaci%cn iniciada\n\n",0xA2);
@@ -60,7 +61,7 @@ void GameBoy::run() {
 		keypad.comprobarPulsadas();
 		keypad.comprobarSoltadas();
 
-		if(finFrame) {
+		if(++iter == 700) { //finFrame) {
 			SDL_PumpEvents(); //Actualizamos eventos
 			Uint8 *keystate = SDL_GetKeyState(NULL);
 			//Salir
@@ -81,6 +82,8 @@ void GameBoy::run() {
 			//Filtro CRT
 			else if(keystate[SDLK_f])
 				gpu.switchFiltroCRT();
+			iter = 0;
 		}
+		
 	}
 }

@@ -66,7 +66,7 @@ class GPU {
 		int linea;
 		SDL_Surface* pantalla;
 		byte VRAM[8192]; //8kB
-		byte OAM[160]; //160B
+		byte OAM[0xA0]; //160B
 		bool filtro;
 		bool fullScreen;
 		int multiplicador;
@@ -85,7 +85,7 @@ class GPU {
 		void dibujarLineaDeSprites();
 		void printLineOfSprite(byte nSprite, int nfilaSprite, ModoSprites modoSprites, int xSprite, RegistrosGPU paleta, bool prioridad, bool flip = false);
 		word getLineOfSprite(byte nSprite, int nfilaSprite, ModoSprites modoSprites);
-		Color getColor(byte codColor, RegistrosGPU paleta = BGP);
+		Color getColor(byte codColor, RegistrosGPU paleta);
 		void actualizarPantalla();
 		void vaciarPantalla();
 		void filtroCRT();

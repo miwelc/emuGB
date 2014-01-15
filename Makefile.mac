@@ -1,7 +1,7 @@
 # Project: emuGB
 
-CPP      = g++-mp-4.9 -D__DEBUG__
-CC       = gcc-mp-4.9 -D__DEBUG__
+CPP      = g++ -D__DEBUG__
+CC       = gcc -D__DEBUG__
 OBJ      = ./obj/CartSlot.o ./obj/emuGB.o ./obj/GameBoy.o ./obj/gpu.o ./obj/instructionSet.o ./obj/MMU.o ./obj/z80gb.o ./obj/keypad.o ./obj/timer.o $(RES)
 LINKOBJ  = ./obj/CartSlot.o ./obj/emuGB.o ./obj/GameBoy.o ./obj/gpu.o ./obj/instructionSet.o ./obj/MMU.o ./obj/z80gb.o ./obj/keypad.o ./obj/timer.o $(RES)
 LIBS     = -L/opt/local/lib -static-libstdc++ -static-libgcc -lSDLmain -lSDL -framework OpenGL -framework Cocoa -g3

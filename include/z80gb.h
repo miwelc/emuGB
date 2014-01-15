@@ -65,8 +65,8 @@ class Z80gb {
 		/// REGISTROS DE 16BITS
 		word SP;
 		
-		word rAF() { return (rA << 8) | rF; } //¿No aparece F en rAF?
-		void rAF(word AF) { rF = (AF & 0xFF); rA = (AF >> 8); }
+	word rAF() { return (rA << 8); }
+	void rAF(word AF) { /*rF = (AF & 0xFF);*/ rA = (AF >> 8); }
 		
 		word rBC() { return rC | (rB << 8); }
 		void rBC(word BC) { rC = (BC & 0xFF); rB = (BC >> 8); }

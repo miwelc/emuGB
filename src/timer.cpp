@@ -42,16 +42,15 @@ void Timer::step(int ciclos) {
 		contadorCiclos += ciclos;
 		if(contadorCiclos >= BASE_CONTADOR_INC) {
 			contadorCiclos -= BASE_CONTADOR_INC;
-			if(++contadorBase == 64)
-				contadorBase = 0;
+			contadorBase++;
 		}
 		
 		//Actualizar divider
 		if(contadorBase%4 == 0)
-			mmu->wb(DIVIDER, mmu->rb(DIVIDER)+1);
+			mmu->wb(DIVIDER, (mmu->rb(DIVIDER)+1)&0xFF);
 		
 		//Actualizar counter
-		if(contadorBase%speed[control&0x03] == 0) {
+		if((contadorBase%speed[control&0x03]) == 0) {
 			contAux = mmu->rb(COUNTER);
 			if(contAux == 0xFF) {
 				contAux = mmu->rb(MODULO);
@@ -60,5 +59,8 @@ void Timer::step(int ciclos) {
 			} else contAux++;
 			mmu->wb(COUNTER, contAux);
 		}
+		
+		if(contadorBase == 64)
+			contadorBase = 0;
 	}
 }

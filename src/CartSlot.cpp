@@ -18,6 +18,7 @@ CartSlot::CartSlot() {
 	escrituraROM = false;
 	ROMBank = 1;
 	RAMBank = 0;
+	RAMBankEnabled = 0;
 	MBCMode = 0;
 }
 
@@ -37,6 +38,11 @@ void CartSlot::cargarROM(const char* dir) {
 		ROMdata = 0;
 		BytesERAM = 0;
 		externalRAM = 0;
+		ROMCargada = false;
+		ROMBank = 1;
+		RAMBank = 0;
+		RAMBankEnabled = 0;
+		MBCMode = 0;
 	}
 	
 	archivo.open(dir, ios::binary);
@@ -121,6 +127,16 @@ void CartSlot::wb(word address, byte valor) {
 	}
 		
 	switch(address & 0xF000) {
+		case 0x0000:
+		case 0x1000:
+			if(MBCMode == 1) { //8Rom-4Ram
+				if(valor == 0x0A)
+					RAMBankEnabled = 1;
+				else
+					RAMBankEnabled = 0;
+			}
+			break;
+			
 		case 0x2000:	//ROM Bank Lbits
 		case 0x3000:
 			valor &= 0x1F; //5bits
@@ -133,8 +149,10 @@ void CartSlot::wb(word address, byte valor) {
 			valor &= 0x03; //2bits
 			if(MBCMode == 0)
 				ROMBank = (ROMBank & 0x1F) | (valor << 5);
-			else
+			else {
 				RAMBank = valor;
+				//RAMBankEnabled = 0;
+			}
 			break;
 			
 		case 0x6000:
@@ -158,6 +176,8 @@ void CartSlot::ww(word address, word valor) {
 
 		extern word PC, pcAnt;
 byte CartSlot::rbERAM(word address) {
+	if(RAMBankEnabled == 0) return 0;
+	
 	address += RAMBank*0x2000;
 	
 	if(address >= BytesERAM) {
@@ -181,6 +201,8 @@ void CartSlot::rwERAM(word address, word &valor) {
 }
 
 void CartSlot::wbERAM(word address, byte valor) {
+	if(RAMBankEnabled == 0) return;
+	
 	address += RAMBank*0x2000;
 	
 	if(address >= BytesERAM) {
